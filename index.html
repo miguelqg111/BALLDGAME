@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ball Damage - Videojuego Web Incremental</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body class="dark-theme">
+  <!-- CANVASES FOR BACKGROUND & HIGH-PERFORMANCE FX -->
+  <canvas id="bg-canvas"></canvas>
+  <canvas id="fx-canvas"></canvas>
+
+  <!-- PANTALLA INICIAL (START SCREEN) -->
+  <div id="start-screen" class="screen-overlay active">
+    <div class="start-content">
+      <div class="logo-container">
+        <div class="logo-badge">EDICIÓN ESPECIAL • V2.0</div>
+        <h1 class="game-title">BALL<span class="highlight">DAMAGE</span></h1>
+        <p class="game-subtitle">DESTRUYE • MEJORA • PRESTIGIO • DOMINA</p>
+      </div>
+
+      <div class="start-actions">
+        <button id="btn-start-play" class="btn-primary pulse-btn">
+          <span class="btn-icon">▶</span>
+          <span class="btn-text">JUGAR AHORA</span>
+        </button>
+        <div class="start-secondary-buttons">
+          <button class="btn-secondary start-nav-btn" data-tab="shop"><span class="btn-icon">🛒</span> TIENDA</button>
+          <button class="btn-secondary start-nav-btn" data-tab="stats"><span class="btn-icon">📊</span> ESTADÍSTICAS</button>
+          <button class="btn-secondary start-nav-btn" data-tab="achievements"><span class="btn-icon">🏆</span> LOGROS</button>
+          <button class="btn-secondary start-nav-btn" data-tab="settings"><span class="btn-icon">⚙️</span> CONFIGURACIÓN</button>
+        </div>
+      </div>
+
+      <div class="start-footer">
+        <span>Diseñado para alto rendimiento • 100% Offline • Cero dependencias</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL DEL JUEGO -->
+  <div id="game-container" class="game-container hidden">
+    <!-- BARRA SUPERIOR (HUD) -->
+    <header class="top-hud">
+      <div class="hud-brand" id="hud-logo-btn" title="Volver al menú inicial">
+        <span class="logo-mini">BALL<span class="highlight">D</span></span>
+      </div>
+
+      <div class="hud-stats">
+        <!-- Nivel & XP -->
+        <div class="hud-stat-pill xp-pill" id="hud-xp-box" title="Experiencia y Nivel">
+          <span class="stat-icon">⭐</span>
+          <div class="stat-meta">
+            <span class="stat-label">NIVEL <strong id="hud-level">1</strong></span>
+            <div class="xp-bar-track">
+              <div id="hud-xp-fill" class="xp-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <span id="hud-xp-text" class="stat-sub">0 / 25 XP</span>
+        </div>
+
+        <!-- Dinero -->
+        <div class="hud-stat-pill money-pill" id="hud-money-box" title="Dinero acumulado">
+          <span class="stat-icon spin-on-gain">💰</span>
+          <div class="stat-meta">
+            <span class="stat-label">DINERO</span>
+            <span id="hud-money" class="stat-value">$0</span>
+          </div>
+        </div>
+
+        <!-- Daño Total -->
+        <div class="hud-stat-pill damage-pill" title="Daño por Clic">
+          <span class="stat-icon">⚔️</span>
+          <div class="stat-meta">
+            <span class="stat-label">DAÑO TOTAL</span>
+            <span id="hud-damage" class="stat-value">1</span>
+          </div>
+        </div>
+
+        <!-- Combo Actual -->
+        <div class="hud-stat-pill combo-pill" id="hud-combo-box" title="Multiplicador de Combo">
+          <span class="stat-icon">🔥</span>
+          <div class="stat-meta">
+            <span class="stat-label">COMBO</span>
+            <span id="hud-combo" class="stat-value">x1.0 (0)</span>
+          </div>
+          <div class="combo-timer-bar">
+            <div id="hud-combo-timer" class="combo-timer-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Botón de Cofres -->
+        <button class="hud-stat-pill chest-pill-btn" id="hud-chest-btn" title="Abrir Cofres y Recompensas">
+          <span class="stat-icon">🎁</span>
+          <div class="stat-meta">
+            <span class="stat-label">COFRES</span>
+            <span id="hud-chest-count" class="stat-value">0</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Buffs Activos / Indicadores Rápidos -->
+      <div class="hud-buffs-container" id="hud-active-buffs"></div>
+
+      <!-- Botones de Audio Rápido -->
+      <div class="hud-controls">
+        <button id="hud-btn-sound" class="btn-icon-hud" title="Alternar Sonido">🔊</button>
+        <button id="hud-btn-music" class="btn-icon-hud" title="Alternar Música">🎵</button>
+      </div>
+    </header>
+
+    <!-- GUÍA DE OBJETIVO ACTUAL (ONBOARDING ADICTIVO) -->
+    <div class="objective-banner" id="current-objective-banner">
+      <div class="objective-badge">🎯 OBJETIVO ACTUAL</div>
+      <div class="objective-text" id="objective-description">Destruye tu primera bola haciendo clic sobre ella.</div>
+      <div class="objective-status" id="objective-progress">0 / 1</div>
+    </div>
+
+    <!-- BANNER DE EVENTO ACTIVO (TEMPORAL) -->
+    <div id="event-banner" class="event-banner hidden">
+      <div class="event-icon" id="event-icon">⚡</div>
+      <div class="event-details">
+        <h4 id="event-title">¡FIEBRE DE DAÑO!</h4>
+        <p id="event-desc">Daño x2 activado durante los próximos segundos.</p>
+      </div>
+      <div class="event-timer" id="event-timer">10s</div>
+    </div>
+
+    <!-- ÁREA DE JUEGO PRINCIPAL (PLAYFIELD DE BOLAS) -->
+    <main class="play-layout">
+      <!-- ARENA DE COMBATE -->
+      <section id="arena-section" class="arena-section">
+        <div id="ball-arena" class="ball-arena">
+          <!-- Las bolas dinámicas se renderizan aquí y en el canvas FX -->
+          <div class="arena-watermark">HAZ CLIC EN LAS BOLAS</div>
+        </div>
+      </section>
+
+      <!-- PANEL LATERAL / PESTAÑAS DE GESTIÓN -->
+      <aside id="panels-section" class="panels-section">
+        <!-- BARRA DE PESTAÑAS (TABS) -->
+        <nav class="game-tabs-nav" id="game-tabs-nav">
+          <button class="tab-btn active" data-tab="arena"><span class="tab-icon">🎯</span> <span class="tab-label">Juego</span></button>
+          <button class="tab-btn" data-tab="shop"><span class="tab-icon">🛒</span> <span class="tab-label">Tienda</span></button>
+          <button class="tab-btn" data-tab="upgrades"><span class="tab-icon">⚡</span> <span class="tab-label">Mejoras</span></button>
+          <button class="tab-btn" data-tab="training"><span class="tab-icon">🏋️</span> <span class="tab-label">Entreno</span></button>
+          <button class="tab-btn" data-tab="missions"><span class="tab-icon">📅</span> <span class="tab-label">Misiones</span><span id="missions-badge" class="badge-dot hidden"></span></button>
+          <button class="tab-btn" data-tab="achievements"><span class="tab-icon">🏆</span> <span class="tab-label">Logros</span><span id="achievements-badge" class="badge-dot hidden"></span></button>
+          <button class="tab-btn" data-tab="stats"><span class="tab-icon">📊</span> <span class="tab-label">Stats</span></button>
+          <button class="tab-btn" data-tab="pets"><span class="tab-icon">🐾</span> <span class="tab-label">Mascotas</span></button>
+          <button class="tab-btn" data-tab="skins"><span class="tab-icon">🎨</span> <span class="tab-label">Skins</span></button>
+          <button class="tab-btn" data-tab="prestige"><span class="tab-icon">♻️</span> <span class="tab-label">Prestigio</span></button>
+          <button class="tab-btn" data-tab="settings"><span class="tab-icon">⚙️</span> <span class="tab-label">Ajustes</span></button>
+        </nav>
+
+        <!-- CONTENIDO DE CADA PESTAÑA -->
+        <div class="tabs-viewport">
+          <!-- 1. PESTAÑA TIENDA (HERRAMIENTAS) -->
+          <div id="tab-shop" class="tab-view hidden">
+            <div class="view-header">
+              <h3>🛒 TIENDA DE HERRAMIENTAS</h3>
+              <p>Compra y equipa herramientas para multiplicar masivamente tu daño.</p>
+            </div>
+            <div class="equipped-weapon-banner" id="equipped-weapon-banner">
+              <span class="equipped-label">HERRAMIENTA EQUIPADA:</span>
+              <span class="equipped-name" id="equipped-name">Puño Básico</span>
+              <span class="equipped-mult" id="equipped-mult">x1 Daño</span>
+            </div>
+            <div class="weapons-grid" id="weapons-grid">
+              <!-- Renderizado dinámico desde economy.js -->
+            </div>
+          </div>
+
+          <!-- 2. PESTAÑA MEJORAS (UPGRADES) -->
+          <div id="tab-upgrades" class="tab-view hidden">
+            <div class="view-header">
+              <h3>⚡ ÁRBOL DE MEJORAS</h3>
+              <p>Mejora tus atributos fundamentales de ataque, economía y combos.</p>
+            </div>
+            <div class="upgrades-filter">
+              <button class="chip-filter active" data-filter="all">Todas</button>
+              <button class="chip-filter" data-filter="damage">⚔️ Daño</button>
+              <button class="chip-filter" data-filter="crit">💥 Crítico</button>
+              <button class="chip-filter" data-filter="money">💰 Dinero</button>
+              <button class="chip-filter" data-filter="speed">⚡ Drones/Auto</button>
+              <button class="chip-filter" data-filter="combo">🔥 Combo</button>
+              <button class="chip-filter" data-filter="xp">⭐ XP</button>
+            </div>
+            <div class="upgrades-list" id="upgrades-list">
+              <!-- Renderizado dinámico desde economy.js -->
+            </div>
+          </div>
+
+          <!-- 3. PESTAÑA ENTRENAMIENTO -->
+          <div id="tab-training" class="tab-view hidden">
+            <div class="view-header">
+              <h3>🏋️ GIMNASIO VIRTUAL DE ENTRENAMIENTO</h3>
+              <p>Supera minijuegos de agilidad y reflejos para obtener potenciadores temporales.</p>
+            </div>
+            <div class="training-cards">
+              <!-- Minijuego 1: Clics Rápidos -->
+              <div class="training-card" id="training-card-clicks">
+                <div class="training-card-header">
+                  <span class="training-icon">⚡</span>
+                  <div>
+                    <h4>Frenesí de Clics</h4>
+                    <span class="buff-tag">+15% Dinero por 5 minutos</span>
+                  </div>
+                </div>
+                <p>Pulsa el botón lo más rápido que puedas durante 5 segundos.</p>
+                <div class="training-interactive-box" id="tg1-box">
+                  <div class="tg1-score">Pulsaciones: <strong id="tg1-count">0</strong></div>
+                  <div class="tg1-timer">Tiempo restante: <strong id="tg1-time">5.0s</strong></div>
+                  <button id="tg1-action-btn" class="btn-action">COMENZAR DESAFÍO</button>
+                </div>
+              </div>
+
+              <!-- Minijuego 2: Reacción Ninja -->
+              <div class="training-card" id="training-card-reaction">
+                <div class="training-card-header">
+                  <span class="training-icon">🎯</span>
+                  <div>
+                    <h4>Reflejos Ninja</h4>
+                    <span class="buff-tag">+10% Daño por 10 minutos</span>
+                  </div>
+                </div>
+                <p>Espera a que la señal cambie a verde y haz clic de inmediato.</p>
+                <div class="training-interactive-box reaction-zone" id="tg2-zone">
+                  <span id="tg2-status-text">Presiona Iniciar cuando estés listo</span>
+                  <button id="tg2-action-btn" class="btn-action">INICIAR TEST</button>
+                </div>
+              </div>
+
+              <!-- Minijuego 3: Pulso Rítmico -->
+              <div class="training-card" id="training-card-rhythm">
+                <div class="training-card-header">
+                  <span class="training-icon">💥</span>
+                  <div>
+                    <h4>Pulso de Precisión</h4>
+                    <span class="buff-tag">+8% Probabilidad Crítica por 10 minutos</span>
+                  </div>
+                </div>
+                <p>Haz clic en el momento exacto en que el anillo exterior alcance el núcleo.</p>
+                <div class="training-interactive-box rhythm-zone" id="tg3-zone">
+                  <div class="rhythm-target-circle">
+                    <div id="rhythm-pulse-circle" class="rhythm-pulse-circle"></div>
+                  </div>
+                  <button id="tg3-action-btn" class="btn-action">GOLPEAR AHORA</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. PESTAÑA MISIONES DIARIAS -->
+          <div id="tab-missions" class="tab-view hidden">
+            <div class="view-header">
+              <h3>📅 MISIONES DIARIAS</h3>
+              <p>Completa desafíos diarios para reclamar dinero, XP y fragmentos.</p>
+              <div class="reset-timer-text">Se reinician en: <strong id="missions-reset-clock">--:--:--</strong></div>
+            </div>
+            <div class="missions-list" id="missions-list">
+              <!-- Renderizado dinámico desde quests.js -->
+            </div>
+          </div>
+
+          <!-- 5. PESTAÑA LOGROS -->
+          <div id="tab-achievements" class="tab-view hidden">
+            <div class="view-header">
+              <h3>🏆 SALÓN DE LOGROS (<span id="achievements-unlocked-count">0</span> / 24)</h3>
+              <p>Desbloquea hitos históricos del juego y reclama bonificaciones permanentes.</p>
+            </div>
+            <div class="achievements-grid" id="achievements-grid">
+              <!-- Renderizado dinámico desde quests.js -->
+            </div>
+          </div>
+
+          <!-- 6. PESTAÑA ESTADÍSTICAS Y RANKING -->
+          <div id="tab-stats" class="tab-view hidden">
+            <div class="view-header">
+              <h3>📊 ESTADÍSTICAS & RANKING LOCAL</h3>
+              <p>Métricas completas de tu trayectoria y récord personal.</p>
+            </div>
+            
+            <div class="stats-summary-grid">
+              <div class="stat-card">
+                <span class="sc-label">Bolas Destruidas</span>
+                <span class="sc-value" id="st-balls-destroyed">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Dinero Total Ganado</span>
+                <span class="sc-value" id="st-total-money">$0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Daño Máximo Golpe</span>
+                <span class="sc-value" id="st-highest-hit">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Mayor Crítico</span>
+                <span class="sc-value" id="st-highest-crit">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Mejor Combo Récord</span>
+                <span class="sc-value" id="st-max-combo">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Nivel Más Alto</span>
+                <span class="sc-value" id="st-max-level">1</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Clics Totales</span>
+                <span class="sc-value" id="st-total-clicks">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Tiempo Jugado</span>
+                <span class="sc-value" id="st-playtime">0m 0s</span>
+              </div>
+              <div class="stat-card">
+                <span class="sc-label">Prestigios Realizados</span>
+                <span class="sc-value" id="st-prestige-count">0</span>
+              </div>
+            </div>
+
+            <div class="ranking-section">
+              <h4>🏆 MEJORES MARCAS (RANKING LOCAL)</h4>
+              <p class="subtext-note">Guardado localmente en este navegador. Arquitectura lista para sincronización en la nube.</p>
+              <div class="ranking-table-container">
+                <table class="ranking-table" id="local-ranking-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>CATEGORÍA</th>
+                      <th>RÉCORD ACTUAL</th>
+                      <th>ESTADO</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ranking-body">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7. PESTAÑA PRESTIGIO (REBIRTH) -->
+          <div id="tab-prestige" class="tab-view hidden">
+            <div class="view-header">
+              <h3>♻️ SISTEMA DE PRESTIGIO (REBIRTH)</h3>
+              <p>Reinicia tu nivel y dinero a cambio de Fragmentos de Prestigio permanentes.</p>
+            </div>
+
+            <div class="prestige-card-main">
+              <div class="prestige-status-box">
+                <div class="prestige-shard-display">
+                  <span class="shard-icon">⭐</span>
+                  <div>
+                    <span class="shard-label">FRAGMENTOS DISPONIBLES</span>
+                    <h2 id="prestige-shards-count">0</h2>
+                  </div>
+                </div>
+                <div class="prestige-estimate">
+                  <span>Al hacer prestigio ahora obtendrás:</span>
+                  <strong id="prestige-shards-gain">+0 ⭐ Fragmentos</strong>
+                </div>
+              </div>
+
+              <div class="prestige-req-notice" id="prestige-req-notice">
+                <span>Requiere alcanzar el <strong>NIVEL 30</strong> para desbloquear tu primer prestigio.</span>
+              </div>
+
+              <button id="btn-open-prestige-modal" class="btn-prestige-action" disabled>
+                ♻️ HACER PRESTIGIO AHORA
+              </button>
+            </div>
+
+            <div class="prestige-upgrades-section">
+              <h4>⭐ MEJORAS PERMANENTES DE PRESTIGIO</h4>
+              <div class="prestige-upgrades-grid" id="prestige-upgrades-grid">
+                <!-- Dinámico desde prestige.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. PESTAÑA CONFIGURACIÓN -->
+          <div id="tab-settings" class="tab-view hidden">
+            <div class="view-header">
+              <h3>⚙️ CONFIGURACIÓN DEL JUEGO</h3>
+              <p>Personaliza tu experiencia audiovisual y gestiona tus datos.</p>
+            </div>
+
+            <div class="settings-group">
+              <h4>AUDIO & MÚSICA</h4>
+              <div class="setting-row">
+                <span>Efectos de Sonido (FX)</span>
+                <label class="switch">
+                  <input type="checkbox" id="setting-sound" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span>Música de Fondo (Retro Synth)</span>
+                <label class="switch">
+                  <input type="checkbox" id="setting-music" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h4>GRÁFICOS & RENDIMIENTO</h4>
+              <div class="setting-row">
+                <span>Animaciones y Partículas</span>
+                <label class="switch">
+                  <input type="checkbox" id="setting-particles" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span>Modo Visual</span>
+                <button id="setting-toggle-theme" class="btn-secondary-small">🌓 Alternar Claro/Oscuro</button>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h4>POTENCIADORES DE ESTADÍSTICAS & XP</h4>
+              <div class="setting-row">
+                <div>
+                  <span>Multiplicador de Ganancia de XP</span>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">Acelera la progresión y subida de niveles</div>
+                </div>
+                <div class="xp-multiplier-selector" id="xp-multiplier-chips">
+                  <button class="chip-mult active" data-mult="1">1x</button>
+                  <button class="chip-mult" data-mult="2">2x</button>
+                  <button class="chip-mult" data-mult="5">5x</button>
+                  <button class="chip-mult" data-mult="10">10x</button>
+                  <button class="chip-mult" data-mult="50">50x</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h4>NOTIFICACIONES & SEGURIDAD</h4>
+              <div class="setting-row">
+                <div>
+                  <span>Bloquear Advertencias y Confirmaciones</span>
+                  <div style="font-size:0.7rem; color:var(--text-muted);">Aplica prestigio y acciones sin ventanas de confirmación</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-mute-warnings">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h4>GESTIÓN DE PARTIDA & TUTORIAL</h4>
+              <div class="setting-actions-row">
+                <button id="setting-btn-tutorial" class="btn-secondary-action">📖 Ver Tutorial Nuevamente</button>
+                <button id="setting-btn-save" class="btn-secondary-action">💾 Guardar Partida Ahora</button>
+              </div>
+              <div class="setting-actions-row">
+                <button id="setting-btn-export" class="btn-secondary-action">📤 Exportar Partida (JSON)</button>
+                <button id="setting-btn-import" class="btn-secondary-action">📥 Importar Partida</button>
+              </div>
+              <div class="setting-actions-row danger-zone">
+                <button id="setting-btn-reset" class="btn-danger-action">⚠️ Reiniciar Toda la Partida</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 9. PESTAÑA MASCOTAS -->
+          <div id="tab-pets" class="tab-view hidden">
+            <div class="view-header">
+              <h3>🐾 SANTUARIO DE MASCOTAS</h3>
+              <p>Desbloquea mascotas en cofres, equípalas para que te acompañen y multiplica tu daño, oro y XP.</p>
+            </div>
+            <div class="pets-grid" id="pets-grid">
+              <!-- Renderizado dinámico desde pets.js -->
+            </div>
+          </div>
+
+          <!-- 10. PESTAÑA SKINS -->
+          <div id="tab-skins" class="tab-view hidden">
+            <div class="view-header">
+              <h3>🎨 SALÓN DE SKINS Y COSMÉTICOS</h3>
+              <p>Personaliza el aspecto de tus esferas, armas, efectos de partículas y cursor de combate.</p>
+            </div>
+            <div class="skins-filter-bar">
+              <button class="chip-skin-filter active" data-category="all">Todas</button>
+              <button class="chip-skin-filter" data-category="ball">⚪ Esferas</button>
+              <button class="chip-skin-filter" data-category="weapon">🗡️ Herramientas</button>
+              <button class="chip-skin-filter" data-category="fx">💥 Efectos FX</button>
+              <button class="chip-skin-filter" data-category="cursor">🎯 Cursor</button>
+            </div>
+            <div class="skins-grid" id="skins-grid">
+              <!-- Renderizado dinámico desde skins.js -->
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- MODAL DE TUTORIAL INTERACTIVO -->
+  <div id="tutorial-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog tutorial-dialog">
+      <div class="modal-header">
+        <h3 id="tut-title">🎯 GUÍA RÁPIDA: CÓMO JUGAR</h3>
+        <button id="tut-btn-skip" class="btn-close-text">SALTAR TUTORIAL</button>
+      </div>
+      <div class="modal-body tutorial-body">
+        <div class="tutorial-slide active" data-step="1">
+          <div class="tut-icon">💥</div>
+          <h4>1. Destruye las Bolas</h4>
+          <p>Haz clic sobre las bolas que aparecen en la arena para restarles vida. ¡Cada bola destruida te otorga <strong>Dinero</strong> y <strong>Experiencia (XP)</strong>!</p>
+        </div>
+        <div class="tutorial-slide" data-step="2">
+          <div class="tut-icon">🛒</div>
+          <h4>2. Compra Herramientas y Armas</h4>
+          <p>Ve a la <strong>Tienda</strong> y adquiere armas más poderosas: guantes, espadas, taladros y láseres para multiplicar tu daño por 2x, 5x, 25x y más.</p>
+        </div>
+        <div class="tutorial-slide" data-step="3">
+          <div class="tut-icon">⚡</div>
+          <h4>3. Árbol de Mejoras</h4>
+          <p>Aumenta tu daño base, mejora tu probabilidad de <strong>golpe crítico</strong>, adquiere drones de ataque automático y amplía tu bonificación por combo.</p>
+        </div>
+        <div class="tutorial-slide" data-step="4">
+          <div class="tut-icon">🔥</div>
+          <h4>4. Mantén el Combo Activo</h4>
+          <p>Golpear bolas sucesivamente aumenta tu multiplicador de <strong>COMBO</strong> hasta 50x, incrementando el daño y el dinero que recibes por bola.</p>
+        </div>
+        <div class="tutorial-slide" data-step="5">
+          <div class="tut-icon">♻️</div>
+          <h4>5. Prestigio (Rebirth)</h4>
+          <p>Al llegar al <strong>Nivel 30</strong>, podrás realizar Prestigio para ganar Fragmentos Cósmicos y desbloquear mejoras eternas.</p>
+        </div>
+      </div>
+      <div class="modal-footer tutorial-footer">
+        <div class="tut-dots" id="tut-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <div class="tut-nav-btns">
+          <button id="tut-btn-prev" class="btn-secondary-small" disabled>Anterior</button>
+          <button id="tut-btn-next" class="btn-primary-small">Siguiente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓN DE PRESTIGIO -->
+  <div id="prestige-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog prestige-confirm-dialog">
+      <div class="modal-header">
+        <h3>♻️ ¿REALIZAR PRESTIGIO?</h3>
+        <button class="btn-modal-close" id="btn-prestige-cancel-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="prestige-warning-icon">⭐</div>
+        <p class="prestige-msg-lead">Estás a punto de ascender al siguiente plano de poder.</p>
+        <div class="prestige-breakdown">
+          <div class="prestige-loss">
+            <h5>⚠️ Lo que se reinicia:</h5>
+            <ul>
+              <li>Nivel de jugador y experiencia normal</li>
+              <li>Dinero acumulado actual</li>
+              <li>Mejoras normales de la tienda</li>
+            </ul>
+          </div>
+          <div class="prestige-gain">
+            <h5>⭐ Lo que obtienes:</h5>
+            <ul>
+              <li><strong id="prestige-modal-gain-shards">+0</strong> Fragmentos de Prestigio permanentes</li>
+              <li>Conserva todas las Mejoras Permanentes de Prestigio</li>
+              <li>Conserva tus Logros y Récords Estadísticos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-prestige-cancel" class="btn-secondary">CANCELAR</button>
+        <button id="btn-prestige-confirm" class="btn-danger-confirm">SÍ, HACER PRESTIGIO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE SUBIDA DE NIVEL (CELEBRACIÓN) -->
+  <div id="levelup-modal" class="modal-backdrop hidden">
+    <div class="levelup-card">
+      <div class="levelup-rays"></div>
+      <div class="levelup-badge">🎉 ¡NIVEL NUEVO!</div>
+      <h2 id="levelup-number">NIVEL 5</h2>
+      <p id="levelup-rewards">+ $150 Dinero • +1 Daño Base Desbloqueado</p>
+      <button id="levelup-btn-continue" class="btn-primary">CONTINUAR</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE IMPORTAR / EXPORTAR PARTIDA -->
+  <div id="io-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="io-modal-title">GESTIÓN DE DATOS</h3>
+        <button class="btn-modal-close" id="btn-io-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="io-modal-desc">Copia este código para respaldar tu partida o pega un código guardado.</p>
+        <textarea id="io-modal-textarea" rows="6" placeholder="Pega aquí tu código JSON de guardado..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-io-action" class="btn-primary">PROCESAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE COFRES & UNBOXING -->
+  <div id="chests-modal" class="modal-backdrop hidden">
+    <div class="modal-dialog chests-dialog">
+      <div class="modal-header">
+        <h3>🎁 TUS COFRES DE BOTÍN</h3>
+        <button class="btn-modal-close" id="btn-chests-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="subtext-note">¡Derrota bolas para ganar más cofres! Ábrelos para descubrir dinero, skins y mascotas.</p>
+        <div class="chests-grid" id="chests-grid">
+          <!-- Renderizado dinámico desde chests.js -->
+        </div>
+
+        <!-- Escena de Unboxing -->
+        <div id="chest-unboxing-scene" class="chest-unboxing-scene hidden">
+          <div class="unbox-rays" id="unbox-rays"></div>
+          <div class="unbox-chest-sprite" id="unbox-chest-icon">🎁</div>
+          <div class="unbox-loot-container" id="unbox-loot-container"></div>
+          <button id="unbox-btn-done" class="btn-primary hidden">¡RECLAMAR TODO!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFIER (NOTIFICACIONES FLOTANTES) -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- SCRIPTS MODULARES -->
+  <script src="js/audio.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/balls.js"></script>
+  <script src="js/economy.js"></script>
+  <script src="js/training.js"></script>
+  <script src="js/quests.js"></script>
+  <script src="js/prestige.js"></script>
+  <script src="js/chests.js"></script>
+  <script src="js/pets.js"></script>
+  <script src="js/skins.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+/* ==========================================================================
+   BALL DAMAGE - ANIMACIONES, KEYFRAMES Y EFECTOS VISUALES
+   ========================================================================== */
+
+/* Flotación de tarjeta inicial */
+@keyframes floatStartCard {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Pulsación de botón principal */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(0, 229, 255, 0.75);
+    transform: scale(1.02);
+  }
+}
+
+/* Fade in & out */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Bolas especiales */
+@keyframes goldPulse {
+  0% {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.6);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    box-shadow: 0 0 40px rgba(234, 179, 8, 0.95);
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes cosmicRotate {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes pulseExpand {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.4);
+    opacity: 0.8;
+  }
+}
+
+/* Texto flotante de daño */
+@keyframes floatUpFade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -20%) scale(0.85);
+  }
+  20% {
+    transform: translate(-50%, -60%) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -140%) scale(0.95);
+  }
+}
+
+/* Squash & Stretch al golpear la bola */
+.ball-hit-anim {
+  animation: ballHitSquash 0.12s ease-in-out;
+}
+
+@keyframes ballHitSquash {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1.18, 0.82);
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(0.92, 1.08);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Sacudida de pantalla en golpes críticos (Screen Shake) */
+.screen-shake {
+  animation: shakeFx 0.25s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shakeFx {
+  10%, 90% { transform: translate3d(-2px, 1px, 0); }
+  20%, 80% { transform: translate3d(3px, -2px, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 3px, 0); }
+  40%, 60% { transform: translate3d(4px, -3px, 0); }
+}
+
+/* Animación de giro al recibir dinero */
+.spin-on-gain.gain-pop {
+  animation: popSpin 0.35s ease;
+}
+
+@keyframes popSpin {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.4) rotate(18deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Vibración de apertura de cofre */
+.chest-shake-anim {
+  animation: chestShake 0.15s infinite alternate ease-in-out;
+}
+
+@keyframes chestShake {
+  0% { transform: scale(1) rotate(-6deg); }
+  100% { transform: scale(1.08) rotate(6deg); }
+}
+
+/* Cofre abierto triunfal */
+.chest-opened-anim {
+  animation: chestOpenBurst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes chestOpenBurst {
+  0% { transform: scale(0.9); filter: brightness(1); }
+  50% { transform: scale(1.35); filter: brightness(2.5) drop-shadow(0 0 35px var(--accent-gold)); }
+  100% { transform: scale(1.15); filter: brightness(1.2); }
+}
+
+/* Rayos de luz giratorios */
+@keyframes spinRays {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Flotación de mascota acompañante */
+@keyframes petCompanionBob {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+/* Tarjeta de botín unboxing */
+@keyframes lootPopIn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+  70% { opacity: 1; transform: translateY(-4px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
